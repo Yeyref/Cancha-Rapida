@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import CanchaCard from '../components/CanchaCard'
 import SkeletonCard from '../components/SkeletonCard'
-import { canchas } from '../data/canchas'
+import { obtenerCanchas } from '../services/canchas'
 import { Helmet } from 'react-helmet-async'
 
 
@@ -15,14 +15,27 @@ function Home() {
   const [datos, setDatos] = useState([])
   const navigate = useNavigate()
 
-  useEffect(() => {
-    // Simula llamada a API — cuando conectes Supabase, esto se reemplaza por fetch real
-    const timer = setTimeout(() => {
-      setDatos(canchas)
+useEffect(() => {
+  const cargar = async () => {
+    try {
+      const data = await obtenerCanchas()
+
+      // parche temporal (porque no tengo estado en DB)
+      const conEstado = data.map(c => ({
+        ...c,
+        estado: 'libre'
+      }))
+
+      setDatos(conEstado)
       setCargando(false)
-    }, 1200)
-    return () => clearTimeout(timer)
-  }, [])
+    } catch (error) {
+      console.error('Error cargando canchas:', error)
+      setCargando(false)
+    }
+  }
+
+  cargar()
+}, [])
 
   const canchasFiltradas = datos.filter(c =>
     filtro === 'todos' ? true : c.deporte === filtro

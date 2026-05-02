@@ -1,19 +1,27 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Swal from 'sweetalert2'
-import { horarios } from '../data/canchas'
+import { obtenerReservasPorCanchaYFecha } from '../services/reservas'
 import MapaCancha from '../components/MapaCancha'
 import SelectorFecha from '../components/SelectorFecha'
 import { Helmet } from 'react-helmet-async'
 import { crearReserva } from '../services/reservas'
+
+const horariosBase = [
+  '08:00','09:00','10:00','11:00','12:00',
+  '13:00','14:00','15:00','16:00','17:00',
+  '18:00','19:00'
+]
+
 
 function Reservar() {
   const { state } = useLocation()
   const navigate = useNavigate()
   const [horaSeleccionada, setHoraSeleccionada] = useState(null)
   const [fecha, setFecha] = useState(null)
+  const [horarios, setHorarios] = useState([])
 
   // Referencias para hacer scroll automático
   const refHorarios = useRef(null)
@@ -21,6 +29,30 @@ function Reservar() {
 
   if (!state?.cancha) { navigate('/'); return null }
   const { cancha } = state
+
+   useEffect(() => {
+  if (!fecha) return
+
+  const cargar = async () => {
+    const fechaFormateada = fecha.toISOString().split('T')[0]
+
+    const data = await obtenerReservasPorCanchaYFecha(
+      cancha.id,
+      fechaFormateada
+    )
+
+    const horasOcupadas = data.map(r => r.hora)
+
+    const resultado = horariosBase.map(h => ({
+      hora: h,
+      estado: horasOcupadas.includes(h) ? 'ocupado' : 'libre'
+    }))
+
+    setHorarios(resultado)
+  }
+
+  cargar()
+}, [fecha, cancha.id])
 
   const estiloSlot = (estado, hora) => {
     if (estado === 'ocupado') return 'bg-white/5 text-gray-600 cursor-not-allowed line-through border-white/5'
@@ -70,13 +102,13 @@ const confirmar = async () => {
   if (!resultado.isConfirmed) return
 
   try {
+
     await crearReserva({
-      cancha: cancha.nombre,
-      deporte: cancha.deporte,
-      fecha: fecha.toISOString(),
+      cancha_id: cancha.id,
+      fecha: fecha.toISOString().split('T')[0], 
       hora: horaSeleccionada,
       precio: cancha.precio,
-      estado: 'confirmada',
+      estado: 'confirmada'
     })
 
     await Swal.fire({
@@ -89,17 +121,40 @@ const confirmar = async () => {
       confirmButtonText: 'Ver mis reservas',
     })
 
+    const data = await obtenerReservasPorCanchaYFecha(
+      cancha.id,
+      fecha.toISOString().split('T')[0]
+    )
+
+    const horasOcupadas = data.map(r => r.hora)
+
+    setHorarios(
+      horariosBase.map(h => ({
+        hora: h,
+        estado: horasOcupadas.includes(h) ? 'ocupado' : 'libre'
+      }))
+    )
+
+    setHoraSeleccionada(null)
+
     navigate('/mis-reservas')
+
+
   } catch (error) {
-    Swal.fire({
-      title: 'Error al reservar',
-      text: 'Hubo un problema al guardar tu reserva. Intenta de nuevo.',
-      icon: 'error',
-      background: '#111827',
-      color: '#ffffff',
-      confirmButtonColor: '#4ade80',
-    })
-  }
+  console.log('Error completo:', error)
+  console.log('Mensaje:', error.message)
+  console.log('Detalles:', error.details)
+  console.log('Hint:', error.hint)
+  console.log('Code:', error.code)
+  Swal.fire({
+    title: 'Error al reservar',
+    text: error.message || 'Hubo un problema al guardar tu reserva.',
+    icon: 'error',
+    background: '#111827',
+    color: '#ffffff',
+    confirmButtonColor: '#4ade80',
+  })
+}
 }
   return (
     
