@@ -1,16 +1,42 @@
-# React + Vite
+# Cancha Rápida
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Platform for booking sports courts in Santiago, Chile.
 
-Currently, two official plugins are available:
+## Live Demo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+[cancha-rapida.vercel.app](https://cancha-rapida.vercel.app)
 
-## React Compiler
+## Tech Stack
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- React 19 + Vite
+- Tailwind CSS v4
+- React Router v7
+- Leaflet / OpenStreetMap
+- SweetAlert2
+- date-fns
 
-## Expanding the ESLint configuration
+## Features
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- Court listing with filters by sport
+- Court detail page with location map
+- Date and time slot selection
+- Booking confirmation and cancellation
+- Persistent storage with localStorage
+- Skeleton loading states
+- Mobile-first responsive design
+- Custom 404 page
+
+## Getting Started
+
+```bash
+npm install
+npm run dev
+```
+
+## Screenshots
+
+![Home](./screenshots/home.png)
+![Detail](./screenshots/detail.png)
+![Details](./screenshots/details.png)
+![Confirm](./screenshots/confirm.png)
+![Booking](./screenshots/booking.png)
