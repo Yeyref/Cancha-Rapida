@@ -4,7 +4,7 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import Swal from 'sweetalert2'
 import { Helmet } from 'react-helmet-async'
-
+import { obtenerReservas, cancelarReserva } from '../services/reservas'
 
 const estadoEstilo = {
   confirmada: 'bg-green-400/10 text-green-400 border border-green-400/20',
@@ -16,43 +16,58 @@ function MisReservas() {
   const navigate = useNavigate()
 
   useEffect(() => {
-    const guardadas = JSON.parse(localStorage.getItem('reservas') || '[]')
-    setReservas(guardadas)
-  }, [])
+    const cargar = async () => {
+        try {
+        const data = await obtenerReservas()
+        setReservas(data)
+        } catch (error) {
+        console.error('Error cargando reservas:', error)
+        }
+    }
+    cargar()
+    }, [])
 
   const cancelar = async (id) => {
     const reserva = reservas.find(r => r.id === id)
 
     const resultado = await Swal.fire({
-      title: '¿Cancelar reserva?',
-      text: `${reserva.cancha} — ${reserva.hora}`,
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, cancelar',
-      cancelButtonText: 'Volver',
-      background: '#111827',
-      color: '#ffffff',
-      confirmButtonColor: '#f87171',
-      cancelButtonColor: '#374151',
+        title: '¿Cancelar reserva?',
+        text: `${reserva.cancha} — ${reserva.hora}`,
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Sí, cancelar',
+        cancelButtonText: 'Volver',
+        background: '#111827',
+        color: '#ffffff',
+        confirmButtonColor: '#f87171',
+        cancelButtonColor: '#374151',
     })
 
     if (!resultado.isConfirmed) return
 
-    const actualizadas = reservas.map(r =>
-      r.id === id ? { ...r, estado: 'cancelada' } : r
-    )
-    setReservas(actualizadas)
-    localStorage.setItem('reservas', JSON.stringify(actualizadas))
+    try {
+        await cancelarReserva(id)
+        setReservas(reservas.map(r => r.id === id ? { ...r, estado: 'cancelada' } : r))
 
-    Swal.fire({
-      title: 'Reserva cancelada',
-      icon: 'info',
-      background: '#111827',
-      color: '#ffffff',
-      timer: 2000,
-      showConfirmButton: false,
-    })
-  }
+        Swal.fire({
+        title: 'Reserva cancelada',
+        icon: 'info',
+        background: '#111827',
+        color: '#ffffff',
+        timer: 2000,
+        showConfirmButton: false,
+        })
+    } catch (error) {
+        Swal.fire({
+        title: 'Error',
+        text: 'No se pudo cancelar la reserva.',
+        icon: 'error',
+        background: '#111827',
+        color: '#ffffff',
+        confirmButtonColor: '#4ade80',
+        })
+    }
+    }
 
   return (
     <div className="px-8 py-10 max-w-2xl mx-auto">

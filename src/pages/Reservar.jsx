@@ -7,7 +7,7 @@ import { horarios } from '../data/canchas'
 import MapaCancha from '../components/MapaCancha'
 import SelectorFecha from '../components/SelectorFecha'
 import { Helmet } from 'react-helmet-async'
-
+import { crearReserva } from '../services/reservas'
 
 function Reservar() {
   const { state } = useLocation()
@@ -46,41 +46,38 @@ function Reservar() {
     }, 100)
   }
 
-  const confirmar = async () => {
-    const resultado = await Swal.fire({
-      title: '¿Confirmar reserva?',
-      html: `
-        <div style="text-align:left; font-size:14px; color:#9ca3af;">
-          <p style="margin-bottom:8px;"><strong style="color:white;">${cancha.nombre}</strong></p>
-          <p style="margin-bottom:4px;">Fecha: <strong style="color:white;">${format(fecha, "EEEE d 'de' MMMM", { locale: es })}</strong></p>
-          <p style="margin-bottom:4px;">Horario: <strong style="color:white;">${horaSeleccionada}</strong></p>
-          <p>Precio: <strong style="color:white;">$${cancha.precio.toLocaleString('es-CL')}</strong></p>
-        </div>
-      `,
-      icon: 'question',
-      showCancelButton: true,
-      confirmButtonText: 'Sí, reservar',
-      cancelButtonText: 'Cancelar',
-      background: '#111827',
-      color: '#ffffff',
-      confirmButtonColor: '#4ade80',
-      cancelButtonColor: '#374151',
-    })
+const confirmar = async () => {
+  const resultado = await Swal.fire({
+    title: '¿Confirmar reserva?',
+    html: `
+      <div style="text-align:left; font-size:14px; color:#9ca3af;">
+        <p style="margin-bottom:8px;"><strong style="color:white;">${cancha.nombre}</strong></p>
+        <p style="margin-bottom:4px;">Fecha: <strong style="color:white;">${format(fecha, "EEEE d 'de' MMMM", { locale: es })}</strong></p>
+        <p style="margin-bottom:4px;">Horario: <strong style="color:white;">${horaSeleccionada}</strong></p>
+        <p>Precio: <strong style="color:white;">$${cancha.precio.toLocaleString('es-CL')}</strong></p>
+      </div>
+    `,
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonText: 'Sí, reservar',
+    cancelButtonText: 'Cancelar',
+    background: '#111827',
+    color: '#ffffff',
+    confirmButtonColor: '#4ade80',
+    cancelButtonColor: '#374151',
+  })
 
-    if (!resultado.isConfirmed) return
+  if (!resultado.isConfirmed) return
 
-    const reserva = {
-      id: Date.now(),
+  try {
+    await crearReserva({
       cancha: cancha.nombre,
       deporte: cancha.deporte,
       fecha: fecha.toISOString(),
       hora: horaSeleccionada,
       precio: cancha.precio,
       estado: 'confirmada',
-    }
-
-    const anteriores = JSON.parse(localStorage.getItem('reservas') || '[]')
-    localStorage.setItem('reservas', JSON.stringify([...anteriores, reserva]))
+    })
 
     await Swal.fire({
       title: '¡Reserva confirmada!',
@@ -93,8 +90,17 @@ function Reservar() {
     })
 
     navigate('/mis-reservas')
+  } catch (error) {
+    Swal.fire({
+      title: 'Error al reservar',
+      text: 'Hubo un problema al guardar tu reserva. Intenta de nuevo.',
+      icon: 'error',
+      background: '#111827',
+      color: '#ffffff',
+      confirmButtonColor: '#4ade80',
+    })
   }
-
+}
   return (
     
     <div className="px-8 py-10 max-w-2xl mx-auto">
