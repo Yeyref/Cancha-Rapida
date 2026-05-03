@@ -252,6 +252,31 @@ function Login() {
           </button>
         </form>
 
+        {modoForm === 'login' && (
+            <button
+                type="button"
+                onClick={async () => {
+                if (!email) {
+                    setError('Ingresa tu correo primero')
+                    return
+                }
+                try {
+                    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                    redirectTo: `${window.location.origin}/reset-password`
+                    })
+                    if (error) throw error
+                    setError(null)
+                    alert('Te enviamos un correo para restablecer tu contraseña')
+                } catch (err) {
+                    setError(err.message)
+                }
+                }}
+                className="w-full text-right text-xs text-gray-500 hover:text-green-400 transition-all mt-1"
+            >
+                ¿Olvidaste tu contraseña?
+            </button>
+            )}
+
         <div className="flex items-center gap-4 my-6">
           <div className="flex-1 h-px bg-white/10"></div>
           <span className="text-gray-600 text-xs">o continúa con</span>

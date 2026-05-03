@@ -6,6 +6,7 @@ import MisReservas from './pages/MisReservas'
 import NotFound from './pages/NotFound'
 import DetalleCancha from './pages/DetalleCancha'
 import Perfil from './pages/Perfil'
+import ResetPassword from './pages/ResetPassword'
 import RutaPrivada from './components/RutaPrivada'
 import RutaPublica from './components/RutaPublica'
 import { useUser } from './hooks/useUser'
@@ -152,7 +153,7 @@ function App() {
           <Route path="/reservar" element={<RutaPrivada><Reservar /></RutaPrivada>} />
           <Route path="/mis-reservas" element={<RutaPrivada><MisReservas /></RutaPrivada>} />
           <Route path="/perfil" element={<RutaPrivada><Perfil /></RutaPrivada>} />
-          
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route
             path="/admin"
             element={
