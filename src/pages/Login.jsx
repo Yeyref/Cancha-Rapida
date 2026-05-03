@@ -65,40 +65,40 @@ function Login() {
   }, [])
 
   const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+  e.preventDefault()
+  setLoading(true)
+  setError(null)
 
-    try {
-      let authUser;
-      if (modoForm === 'login') {
-        const { data } = await signIn(email, password)
-        authUser = data.user
-      } else {
-        const { data } = await signUp(email, password, nombre)
-        authUser = data.user
-      }
+  try {
+    let authUser
 
-      if (!authUser) throw new Error("No se pudo obtener el usuario")
-
-      // Verificamos el rol del usuario que acaba de entrar
-      const { data: p } = await supabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", authUser.id)
-        .single()
-
-      if (p?.rol === 'admin') {
-        navigate('/admin')
-      } else {
-        navigate('/')
-      }
-    } catch (err) {
-      setError(err.message)
-    } finally {
-      setLoading(false)
+    if (modoForm === 'login') {
+      const data = await signIn(email, password)
+      authUser = data?.user
+    } else {
+      const data = await signUp(email, password, nombre)
+      authUser = data?.user
     }
+
+    if (!authUser) throw new Error('No se pudo obtener el usuario')
+
+    const { data: p } = await supabase
+      .from('perfiles')
+      .select('rol')
+      .eq('id', authUser.id)
+      .single()
+
+    if (p?.rol === 'admin' || p?.rol === 'superadmin') {
+      navigate('/admin')
+    } else {
+      navigate('/')
+    }
+  } catch (err) {
+    setError(err.message)
+  } finally {
+    setLoading(false)
   }
+}
 
   // SPLASH
   if (fase === 'splash') {
