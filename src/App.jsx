@@ -12,7 +12,14 @@ import { useUser } from './hooks/useUser'
 import { useRef, useState, useEffect } from 'react'
 import { supabase } from './services/supabase'
 
-
+import RutaAdmin from "./components/RutaAdmin"
+import AdminLayout from "./pages/admin/AdminLayout"
+import Dashboard from "./pages/admin/Dashboard"
+import Usuarios from "./pages/admin/Usuarios"
+import Reservas from "./pages/admin/Reservas"
+import Sedes from "./pages/admin/Sedes"    
+import Canchas from "./pages/admin/Canchas"  
+import Calendario from "./pages/admin/Calendario"
 function Navbar() {
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -100,21 +107,34 @@ function AuthCallback() {
 
   useEffect(() => {
     const handleLogin = async () => {
-      const { data, error } = await supabase.auth.getSession()
+      const { data: { session } } = await supabase.auth.getSession()
 
-      if (data.session) {
-        navigate('/')
+      if (session) {
+        const { data: perfil } = await supabase
+          .from("perfiles")
+          .select("rol")
+          .eq("id", session.user.id)
+          .single()
+
+        if (perfil?.rol === 'admin' || perfil.rol === 'superadmin') {
+          navigate('/admin')
+        } else {
+          navigate('/')
+        }
       } else {
         navigate('/login')
       }
     }
 
     handleLogin()
-  }, [])
+  }, [navigate])
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-6 h-6 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+    <div className="min-h-screen flex items-center justify-center bg-gray-950">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-8 h-8 border-4 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-gray-400 animate-pulse text-sm">Verificando acceso...</p>
+      </div>
     </div>
   )
 }
@@ -132,6 +152,23 @@ function App() {
           <Route path="/reservar" element={<RutaPrivada><Reservar /></RutaPrivada>} />
           <Route path="/mis-reservas" element={<RutaPrivada><MisReservas /></RutaPrivada>} />
           <Route path="/perfil" element={<RutaPrivada><Perfil /></RutaPrivada>} />
+          
+          <Route
+            path="/admin"
+            element={
+              <RutaAdmin>
+                <AdminLayout />
+              </RutaAdmin>
+            }
+          >
+            <Route index element={<Dashboard />} />
+            <Route path="usuarios" element={<Usuarios />} />
+            <Route path="reservas" element={<Reservas />} />
+            <Route path="sedes" element={<Sedes />} />      
+            <Route path="canchas" element={<Canchas />} />    
+            <Route path="calendario" element={<Calendario />} />
+          </Route>
+          
           <Route path="*" element={<NotFound />} />
         </Routes>
       </div>

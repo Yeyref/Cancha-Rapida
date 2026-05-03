@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { signIn, signUp, signInWithGoogle } from '../services/auth'
 import { Helmet } from 'react-helmet-async'
+import { useUser } from '../hooks/useUser'
+import { supabase } from '../services/supabase'
 
 const slides = [
   {
@@ -43,8 +45,20 @@ function Login() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const navigate = useNavigate()
+  const { user, perfil, loading: userLoading } = useUser()
 
-  // Splash screen de 2 segundos
+  /// 1. Efecto para redireccionar si ya hay sesión activa
+  useEffect(() => {
+    if (!userLoading && user) {
+      if (perfil?.rol === 'admin') {
+        navigate('/admin')
+      } else {
+        navigate('/')
+      }
+    }
+  }, [user, perfil, userLoading, navigate])
+
+  // 2. Splash screen de 2 segundos
   useEffect(() => {
     const timer = setTimeout(() => setFase('onboarding'), 2000)
     return () => clearTimeout(timer)
@@ -56,12 +70,29 @@ function Login() {
     setError(null)
 
     try {
+      let authUser;
       if (modoForm === 'login') {
-        await signIn(email, password)
+        const { data } = await signIn(email, password)
+        authUser = data.user
       } else {
-        await signUp(email, password, nombre)
+        const { data } = await signUp(email, password, nombre)
+        authUser = data.user
       }
-      navigate('/')
+
+      if (!authUser) throw new Error("No se pudo obtener el usuario")
+
+      // Verificamos el rol del usuario que acaba de entrar
+      const { data: p } = await supabase
+        .from("perfiles")
+        .select("rol")
+        .eq("id", authUser.id)
+        .single()
+
+      if (p?.rol === 'admin') {
+        navigate('/admin')
+      } else {
+        navigate('/')
+      }
     } catch (err) {
       setError(err.message)
     } finally {

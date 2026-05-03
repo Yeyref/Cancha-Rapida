@@ -4,48 +4,68 @@ import CanchaCard from '../components/CanchaCard'
 import SkeletonCard from '../components/SkeletonCard'
 import { obtenerCanchas } from '../services/canchas'
 import { Helmet } from 'react-helmet-async'
-
-
+import { useUser } from '../hooks/useUser' // Importamos el hook de usuario
 
 const deportes = ['todos', 'futbol', 'basquet', 'tenis', 'padel']
 
 function Home() {
+  const { perfil, loading: cargandoPerfil } = useUser() // Obtenemos el perfil y su estado de carga
   const [filtro, setFiltro] = useState('todos')
-  const [cargando, setCargando] = useState(true)
+  const [cargandoCanchas, setCargandoCanchas] = useState(true)
   const [datos, setDatos] = useState([])
   const navigate = useNavigate()
 
-useEffect(() => {
-  const cargar = async () => {
-    try {
-      const data = await obtenerCanchas()
-
-      // parche temporal (porque no tengo estado en DB)
-      const conEstado = data.map(c => ({
-        ...c,
-        estado: 'libre'
-      }))
-
-      setDatos(conEstado)
-      setCargando(false)
-    } catch (error) {
-      console.error('Error cargando canchas:', error)
-      setCargando(false)
+  // EFECTO 1: Redirección por Rol
+  useEffect(() => {
+    if (!cargandoPerfil && perfil) {
+      if (perfil.rol === 'admin' || perfil.rol === 'superadmin') {
+        navigate('/admin')
+      }
     }
-  }
+  }, [perfil, cargandoPerfil, navigate])
 
-  cargar()
-}, [])
+  // EFECTO 2: Carga de datos de canchas
+  useEffect(() => {
+    const cargar = async () => {
+      try {
+        const data = await obtenerCanchas()
+
+        // parche temporal (porque no tengo estado en DB)
+        const conEstado = data.map(c => ({
+          ...c,
+          estado: 'libre'
+        }))
+
+        setDatos(conEstado)
+        setCargandoCanchas(false)
+      } catch (error) {
+        console.error('Error cargando canchas:', error)
+        setCargandoCanchas(false)
+      }
+    }
+
+    cargar()
+  }, [])
 
   const canchasFiltradas = datos.filter(c =>
     filtro === 'todos' ? true : c.deporte === filtro
   )
 
+  // Si está cargando el perfil o si es un admin (mientras se ejecuta el navigate), no mostramos nada
+  if (cargandoPerfil || (perfil && (perfil.rol === 'admin' || perfil.rol === 'superadmin'))) {
+    return (
+      <div className="h-screen w-screen bg-black flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-400"></div>
+      </div>
+    )
+  }
+
   return (
     <div className="px-8 py-10 max-w-6xl mx-auto">
-    <Helmet>
-    <title>Canchas disponibles — Cancha Rápida</title>
-    </Helmet>
+      <Helmet>
+        <title>Canchas disponibles — Cancha Rápida</title>
+      </Helmet>
+      
       <div className="mb-10">
         <p className="text-green-400 text-sm font-semibold uppercase tracking-widest mb-3">Santiago, Chile</p>
         <h1 className="text-4xl font-extrabold text-white leading-tight mb-2">
@@ -53,7 +73,7 @@ useEffect(() => {
           <span className="text-green-400">reserva en segundos.</span>
         </h1>
         <p className="text-gray-400 text-base mt-3">
-          {cargando ? '...' : `${datos.filter(c => c.estado === 'libre').length} canchas disponibles ahora mismo`}
+          {cargandoCanchas ? '...' : `${datos.filter(c => c.estado === 'libre').length} canchas disponibles ahora mismo`}
         </p>
       </div>
 
@@ -74,7 +94,7 @@ useEffect(() => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {cargando
+        {cargandoCanchas
           ? Array.from({ length: 6 }).map((_, i) => <SkeletonCard key={i} />)
           : canchasFiltradas.map(cancha => (
               <CanchaCard

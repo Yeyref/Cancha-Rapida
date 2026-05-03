@@ -14,12 +14,13 @@ const fetchUser = async () => {
   let perfil = null;
 
   if (user) {
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("perfiles")
-      .select("nombre, email, rol")
+      .select("nombre, email, rol, organizacion_id")
       .eq("id", user.id)
       .maybeSingle();
 
+    if (error) console.error("Error cargando perfil:", error);
     perfil = data;
   }
 
@@ -31,8 +32,10 @@ let initialized = false;
 
 export const useUser = () => {
   useEffect(() => {
-    const { data: listener } = supabase.auth.onAuthStateChange(() => {
-      fetchUser();
+    const { data: listener } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        fetchUser();
+      }
     });
 
     return () => {
@@ -43,12 +46,10 @@ export const useUser = () => {
   const state = useSyncExternalStore(
     (cb) => {
       callbacks.add(cb);
-
       if (!initialized) {
         initialized = true;
         fetchUser();
       }
-
       return () => callbacks.delete(cb);
     },
     () => cache,
